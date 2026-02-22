@@ -173,23 +173,21 @@ lemma enough_for_sqrt (N k : ℕ) (hk : k ≥ 1) (h : N ≤ k + 2 * k^2) :
 /-! ## Part 4: The Blocking Count Argument -/
 
 /-!
-### The Blocking Count Argument
+### The Blocking Count Argument (Axiom-Free)
 
-The key combinatorial insight: if S is maximal Sidon in A, then |A| ≤ O(|S|²).
+Let S be a maximal Sidon subset of A. Every x ∈ A \ S is "blocked" in the sense
+that insert x S is not Sidon, so there is a collision involving x.
 
-Each x ∈ A \ S is "blocked" by some collision with S. Specifically, 
-if x ∉ S but S ∪ {x} is not Sidon, there exist a, b, c, d ∈ S ∪ {x} with
-a + b = c + d and {a,b} ≠ {c,d}. Since S is Sidon, x must appear in this collision.
+We classify blocked elements:
+- Type 2: 2x = a + b for some a,b ∈ S. These inject into S+S, so there are ≤ |S|².
+- Type 1 only: x + c = a + b for some a,b,c ∈ S but x is not Type 2. These lie in
+  the image of S³ under (a,b,c) ↦ a+b−c, hence ≤ |S|³.
 
-Each ordered pair (a, b) ∈ S × S can block at most O(1) elements x:
-- If x + a = b + c for some c, then x = b + c - a (unique for each (a,b,c))
-- If a + b = x + c, then x = a + b - c (unique for each (a,b,c))
+Thus |A \ S| ≤ |S|² + |S|³, and so |A| ≤ |S| + |S|² + |S|³ ≤ 3|S|³ for |S| ≥ 1.
+This yields a Sidon subset of size Ω(|A|^{1/3}) for arbitrary finite A ⊆ ℕ.
 
-So the number of blocked elements is at most O(|S|² · |S|) = O(|S|³).
-But the Sidon property gives a tighter bound: the sums a + b for (a,b) ∈ S × S 
-are nearly unique, so we get |A \ S| ≤ O(|S|²).
-
-Thus |A| = |S| + |A \ S| ≤ |S| + O(|S|²) ≤ O(|S|²), giving |S| ≥ Ω(√|A|).
+Stronger √|A| bounds (KSS 1975) require a different extraction argument; they do
+not follow from this "arbitrary maximal Sidon set" counting method alone.
 -/
 
 /-- Helper: Any collision in insert x S must involve x when S is Sidon. -/
@@ -606,8 +604,10 @@ All three are standard Lean foundational axioms. **No custom mathematical axioms
 
 This establishes a lower bound direction of **Erdős Problem 530**.
 
-The stronger bound ℓ(N) ≥ Ω(√N) from KSS (1975) requires the 2-to-1
-charging argument, which was shown computationally to be FALSE under
-universal quantification over all finite A ⊆ ℕ (counterexample:
-spread-out Sidon sets S with |A\S| growing as Θ(|S|³) > 2|S|²).
+The stronger bound ℓ(N) ≥ c√N (KSS 1975) is known classically but is not
+formalized here. An earlier attempt to axiomatize an intermediate "2-to-1 map
+into S×S for arbitrary maximal Sidon S ⊆ A" was an overstrong statement
+and is false for general finite A ⊆ ℕ (spread-out examples give
+|A\S| = Θ(|S|³)). Formalizing KSS requires encoding their actual extraction
+argument, which uses additional structure beyond this naive blocking count.
 -/
