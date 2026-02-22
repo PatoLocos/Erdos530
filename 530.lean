@@ -94,13 +94,14 @@ For any finite A ⊆ ℕ, there exists a Sidon subset B ⊆ A with |B| ≥ (1/2)
 
 This implies ℓ(N) ≥ (1/2)√N (take A = {1,...,N}).
 
-*Note*: This theorem has a complete proof modulo one axiom capturing the
-KSS charging argument. See `kss_two_to_one_map_exists` below.
+*Note*: The original KSS charging argument (2-to-1 map from A\S to S×S) was found
+to be FALSE under universal quantification over A. A weaker cube root bound
+(|A| ≤ 3|B|³) is fully proven axiom-free in `KSS_Proven.lean`.
 -/
 @[category research solved, AMS 5 11]
 theorem kss_lower_bound (A : Finset ℕ) (hA : A.card ≥ 1) :
     ∃ B : Finset ℕ, B ⊆ A ∧ B.IsSidon ∧ (B.card : ℝ) ≥ (1/2) * Real.sqrt A.card := by
-  sorry -- Full proof in KSS_Proven.lean with 1 axiom
+  sorry -- Full √N bound requires different technique; cube root bound proven in KSS_Proven.lean
 
 /--
 **Trivial Upper Bound**
@@ -116,47 +117,43 @@ theorem sidon_upper_bound (N : ℕ) (S : Finset ℕ) (hS : S ⊆ Finset.Icc 1 N)
     (S.card : ℝ) ≤ Real.sqrt (2 * N) + 1 := by
   sorry
 
-/-! ## The KSS Axiom
+/-! ## Proven Partial Result: Cube Root Bound
 
-The following axiom encapsulates the combinatorial core of the KSS (1975) proof.
-It states that for any maximal Sidon set S in A, blocked elements can be "charged"
-to pairs in S×S with each pair receiving charge ≤ 2.
+The following weaker bound IS fully proven (axiom-free) in `KSS_Proven.lean`.
+It uses a direct blocking count argument: each blocked element in A \ S
+corresponds to a collision that can be traced to at most |S|² + |S|³ cases.
 -/
 
 /--
-A set A admits a 2-to-1 map from A \ S to S × S if there exists f such that:
-1. Every blocked element maps to a pair in S × S
-2. Each pair in the image receives at most 2 preimages
+**Cube Root Bound (Proven)**
+
+For any finite A ⊆ ℕ with |A| ≥ 1, there exists a Sidon subset B ⊆ A
+with |A| ≤ 3|B|³.
+
+This gives ℓ(N) ≥ Ω(N^{1/3}), weaker than the conjectured Ω(√N) but
+fully formalized with no custom axioms.
+
+Full proof: `KSS_Proven.lean` → `erdos_cube_root_bound`
 -/
-def AdmitsTwoToOneMap (A S : Finset ℕ) (_hMax : S.IsMaximalSidon A) : Prop :=
-  ∃ (f : ℕ → ℕ × ℕ),
-    (∀ x ∈ A \ S, f x ∈ S ×ˢ S) ∧
-    (∀ p ∈ (A \ S).image f, ((A \ S).filter fun x => f x = p).card ≤ 2)
-
-/--
-**The KSS Charging Axiom**
-
-For every maximal Sidon subset S of A, there exists a map f : A \ S → S × S
-such that each pair in the image receives charge from at most 2 blocked elements.
-
-This is the combinatorial heart of the KSS (1975) argument. Each blocked x
-can be charged to its "canonical collision witness" (a,b) ∈ S × S, and the
-Sidon property of S ensures no pair is overcharged.
--/
-axiom kss_two_to_one_map_exists (A S : Finset ℕ) (hMax : S.IsMaximalSidon A) :
-    AdmitsTwoToOneMap A S hMax
+@[category research solved, AMS 5 11]
+theorem cube_root_lower_bound (A : Finset ℕ) (hA : A.card ≥ 1) :
+    ∃ B : Finset ℕ, B ⊆ A ∧ B.IsSidon ∧ A.card ≤ 3 * B.card ^ 3 := by
+  sorry -- Full axiom-free proof in KSS_Proven.lean (erdos_cube_root_bound)
 
 /-!
-## Axiom Dependencies
+## Axiom Status
 
-The `kss_lower_bound` theorem (when fully proven in KSS_Proven.lean) depends on:
-- `propext` — Propositional extensionality (standard Lean)
-- `Classical.choice` — Classical choice (standard Lean)  
-- `Quot.sound` — Quotient soundness (standard Lean)
-- `kss_two_to_one_map_exists` — **One mathematical axiom** (above)
+All results in `KSS_Proven.lean` depend only on standard Lean axioms:
+- `propext` — Propositional extensionality
+- `Classical.choice` — Classical choice
+- `Quot.sound` — Quotient soundness
 
-The axiom can be eliminated by formalizing the canonical witness selector
-and the detailed case analysis from KSS Lemma 2.
+**No custom axioms.** A previous axiom (`kss_two_to_one_map_exists`) positing
+a 2-to-1 charging map from A \ S to S × S was removed after computational
+verification showed it is FALSE for general A ⊆ ℕ (counterexample: spread-out
+Sidon sets where |A \ S| grows as Θ(|S|³) > 2|S|²).
+
+The full √N lower bound requires a different formalization strategy.
 -/
 
 end Erdos530
