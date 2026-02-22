@@ -94,9 +94,11 @@ For any finite A ⊆ ℕ, there exists a Sidon subset B ⊆ A with |B| ≥ (1/2)
 
 This implies ℓ(N) ≥ (1/2)√N (take A = {1,...,N}).
 
-*Note*: The original KSS charging argument (2-to-1 map from A\S to S×S) was found
-to be FALSE under universal quantification over A. A weaker cube root bound
-(|A| ≤ 3|B|³) is fully proven axiom-free in `KSS_Proven.lean`.
+*Note*: The KSS (1975) result ℓ(N) ≥ c√N is correct. However, an earlier
+axiomatization of an intermediate step (a universal 2-to-1 charging map from
+A\S to S×S for arbitrary A) was an overstrong claim that is FALSE in full
+generality. A weaker cube root bound (|A| ≤ 3|B|³) is fully proven axiom-free
+in `KSS_Proven.lean`.
 -/
 @[category research solved, AMS 5 11]
 theorem kss_lower_bound (A : Finset ℕ) (hA : A.card ≥ 1) :
@@ -149,11 +151,15 @@ All results in `KSS_Proven.lean` depend only on standard Lean axioms:
 - `Quot.sound` — Quotient soundness
 
 **No custom axioms.** A previous axiom (`kss_two_to_one_map_exists`) positing
-a 2-to-1 charging map from A \ S to S × S was removed after computational
-verification showed it is FALSE for general A ⊆ ℕ (counterexample: spread-out
-Sidon sets where |A \ S| grows as Θ(|S|³) > 2|S|²).
+a universal 2-to-1 charging map from A \ S to S × S was removed after
+computational verification showed it is FALSE in full generality (counterexample:
+spread-out Sidon sets where |A \ S| grows as Θ(|S|³) > 2|S|²).
 
-The full √N lower bound requires a different formalization strategy.
+This does **not** contradict KSS (1975), whose ℓ(N) ≥ c√N result is correct.
+The axiom was an overstrong universal statement that does not faithfully capture
+the actual KSS argument. Formalizing the real √N bound requires encoding the
+true KSS Lemma 2, which likely uses structure beyond a simple cardinality bound
+on |A \ S| for arbitrary A.
 -/
 
 end Erdos530

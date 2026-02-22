@@ -47,7 +47,13 @@ All three are standard Lean foundational axioms. **No custom mathematical axioms
 
 ## What This Doesn't Prove
 
-The stronger bound ℓ(N) ≥ Ω(√N) from KSS (1975) requires a 2-to-1 charging argument. An earlier version of this formalization axiomatized that claim, but computational verification showed the axiom is **false** under universal quantification over all finite A ⊆ ℕ (counterexample: spread-out Sidon sets where |A\S| grows as Θ(|S|³) > 2|S|²). The false axiom was removed.
+The full result ℓ(N) = Θ(√N) is known classically:
+- **Lower bound**: KSS (1975) proved ℓ(N) ≥ c√N for an absolute constant c > 0.
+- **Upper bound**: ℓ(N) ≤ (1+o(1))√N via classical extremal bounds for Sidon subsets of intervals.
+
+An earlier version of this formalization axiomatized an intermediate step (a universal 2-to-1 charging map from A\S to S×S for arbitrary A). Computational verification showed this axiom is an **overstrong claim that is false** in full generality (counterexample: spread-out Sidon sets where |A\S| grows as Θ(|S|³) > 2|S|²). The axiom was removed.
+
+This does **not** contradict KSS — their result is correct. The axiom was a stronger universal statement that does not faithfully capture the actual KSS argument, which may not pass through bounding |A\S| for an arbitrary maximal Sidon S in an arbitrary A. Bridging the gap from our Ω(N^{1/3}) to the true Ω(√N) requires formalizing the real KSS Lemma 2.
 
 ## Building
 

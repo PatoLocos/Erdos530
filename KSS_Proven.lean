@@ -20,13 +20,18 @@
   - Specifically: every finite A ⊆ ℕ contains a Sidon subset B with |A| ≤ 3|B|³.
 
   **Known classically (not formalized here):**
-  - The KSS (1975) argument gives the stronger ℓ(N) ≥ Ω(√N), but the
-    charging map argument (2-to-1 fibers) is FALSE under universal quantification
-    over A and was removed from this formalization.
-  - Upper bound: ℓ(N) ≤ (1+o(1))√N via A = {1,...,N}.
+  - KSS (1975) proved ℓ(N) ≥ c√N for an absolute constant c > 0.
+    Combined with the trivial upper bound ℓ(N) ≤ (1+o(1))√N, this gives
+    ℓ(N) = Θ(√N). The KSS result is correct; however, our earlier
+    axiomatization of an intermediate step (a universal 2-to-1 charging map
+    from A \ S to S × S for arbitrary A) was an overstrong claim that is
+    FALSE in full generality. The axiom was removed.
+  - Formalizing the real √N bound requires encoding the actual KSS argument
+    (which may not pass through bounding |A \ S| for an arbitrary maximal
+    Sidon S in an arbitrary A).
 
   **Still OPEN in the literature:**
-  - Exact asymptotics: Is ℓ(N) ~ √N? (i.e., does ℓ(N)/√N → 1?)
+  - Exact asymptotics: ℓ(N) ~ √N? (i.e., does ℓ(N)/√N → 1?)
 
   ## Status: ✅ COMPLETE (fully proven, no custom axioms)
 
