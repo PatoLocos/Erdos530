@@ -1,46 +1,53 @@
-# Erdős Problem 530: Partial Formalization
+# Erdős Problem 530: Sidon Set Blocking Bounds (Formalization)
 
-A Lean 4 formalization attempt for [Erdős Problem 530](https://www.erdosproblems.com/530).
+A Lean 4 formalization for [Erdős Problem 530](https://www.erdosproblems.com/530).
 
-## ⚠️ Important Disclaimer
+## ✅ Fully Proven (No Custom Axioms)
 
-**This is NOT a complete proof.** 
-
-The formalization contains **one mathematical axiom** that encapsulates the combinatorial core of the Komlós-Sulyok-Szemerédi (1975) charging argument. The axiom has not been eliminated.
+All theorems in this repository are **axiom-free** — they depend only on the standard Lean foundations (`propext`, `Classical.choice`, `Quot.sound`).
 
 ## What This Repository Contains
 
-- `KSS_Proven.lean` - Main formalization (compiles with Mathlib, 1 axiom)
+- `KSS_Proven.lean` - Main formalization (compiles with Mathlib, **0 custom axioms**)
 - `530.lean` - Formatted for potential submission to [formal-conjectures](https://github.com/google-deepmind/formal-conjectures)
 
-## What Is Proven (Modulo 1 Axiom)
+## What Is Proven
 
 ```
-∀ finite A ⊆ ℕ, ∃ Sidon B ⊆ A with |B| ≥ (1/2)√|A|
+∀ finite A ⊆ ℕ, |A| ≥ 1 → ∃ Sidon B ⊆ A with |A| ≤ 3|B|³
 ```
 
-This establishes the **lower bound** direction: ℓ(N) ≥ Ω(√N).
+This establishes the **lower bound** direction: ℓ(N) ≥ Ω(N^{1/3}).
 
-## The Remaining Axiom
+### Main Results
 
-```lean
-axiom kss_two_to_one_map_exists (A S : Finset ℕ) (hMax : S.IsMaximalSidon A) :
-    ∃ (f : ℕ → ℕ × ℕ), 
-      (∀ x ∈ A \ S, f x ∈ S ×ˢ S) ∧
-      (∀ p ∈ (A \ S).image f, ((A \ S).filter fun x => f x = p).card ≤ 2)
-```
+| Theorem | Statement | Status |
+|---------|-----------|--------|
+| `blocking_bound_cubic` | \|A \ S\| ≤ \|S\|² + \|S\|³ | ✅ Proven |
+| `axiom_free_cube_bound` | \|A\| ≤ 3\|S\|³ | ✅ Proven |
+| `erdos_cube_root_bound` | ∃ Sidon B ⊆ A, \|A\| ≤ 3\|B\|³ | ✅ Proven |
 
-This states that blocked elements can be "charged" to pairs in S×S with each pair receiving at most 2 charges. Eliminating this axiom requires formalizing the canonical witness selector and detailed case analysis from KSS Lemma 2.
+### Key Lemmas
+
+- `singleton_isSidon` — Singleton sets are Sidon
+- `exists_maximal_sidon` — Maximal Sidon subsets exist (finite maximality)
+- `collision_involves_x` — Any collision in insert x S involves x
+- `blocked_element_form` — Blocked elements have specific algebraic form (16 cases)
+- `blockedType2_card_le` — |Type 2 blocked| ≤ |S|² (injection into sumset)
+- `type1Only_card_le_cube` — |Type 1 only blocked| ≤ |S|³ (subset of S³ image)
 
 ## Axiom Verification
 
 ```
-$ lake env lean KSS_Proven.lean
-'KSSProven.kss_sqrt_bound' depends on axioms: 
-  [propext, Classical.choice, KSSProven.kss_two_to_one_map_exists, Quot.sound]
+'KSSProven.erdos_cube_root_bound' depends on axioms: 
+  [propext, Classical.choice, Quot.sound]
 ```
 
-Only `kss_two_to_one_map_exists` is non-standard.
+All three are standard Lean foundational axioms. **No custom mathematical axioms.**
+
+## What This Doesn't Prove
+
+The stronger bound ℓ(N) ≥ Ω(√N) from KSS (1975) requires a 2-to-1 charging argument. An earlier version of this formalization axiomatized that claim, but computational verification showed the axiom is **false** under universal quantification over all finite A ⊆ ℕ (counterexample: spread-out Sidon sets where |A\S| grows as Θ(|S|³) > 2|S|²). The false axiom was removed.
 
 ## Building
 

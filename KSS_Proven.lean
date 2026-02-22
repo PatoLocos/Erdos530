@@ -1,59 +1,46 @@
 /-
-  KSS Lower Bound for Sidon Sets (Formalization)
-  ==============================================
+  Sidon Set Blocking Bounds (Formalization)
+  =========================================
   
-  This file contains the formalization of the Komlós-Sulyok-Szemerédi (1975) theorem:
-  For any finite set A ⊆ ℕ, there exists a Sidon subset B ⊆ A with |B| ≥ c√|A|.
+  This file contains a formal proof that every finite set A ⊆ ℕ contains
+  a Sidon subset of size Ω(|A|^{1/3}).
 
-  ## Main Result
+  ## Main Results
   
-  **Theorem** (`kss_sqrt_bound`): For any finite A ⊆ ℕ with |A| ≥ 1,
-  there exists B ⊆ A with B Sidon and |B| ≥ (1/2)√|A|.
+  **Theorem** (`blocking_bound_cubic`): For any maximal Sidon S ⊆ A,
+  |A \ S| ≤ |S|² + |S|³.
   
-  ## What This Proves (and Doesn't Prove)
+  **Corollary** (`erdos_cube_root_bound`): For any finite A ⊆ ℕ with |A| ≥ 1,
+  there exists a Sidon B ⊆ A with |A| ≤ 3|B|³.
   
-  **This file proves ONE DIRECTION of Erdős Problem 530:**
-  - Lower bound: ℓ(N) ≥ (1/2)√N (this formalization, modulo one axiom)
-  
-  **NOT proven here (but known classically):**
-  - Upper bound: ℓ(N) ≤ f(N) where f(N) = max Sidon subset size in {1,...,N},
-    and f(N) = (1+o(1))√N. The adversarial set A = {1,...,N} witnesses this.
-  
+  ## What This Proves
+
+  **This file proves a lower bound direction of Erdős Problem 530:**
+  - Lower bound: ℓ(N) ≥ Ω(N^{1/3})
+  - Specifically: every finite A ⊆ ℕ contains a Sidon subset B with |A| ≤ 3|B|³.
+
+  **Known classically (not formalized here):**
+  - The KSS (1975) argument gives the stronger ℓ(N) ≥ Ω(√N), but the
+    charging map argument (2-to-1 fibers) is FALSE under universal quantification
+    over A and was removed from this formalization.
+  - Upper bound: ℓ(N) ≤ (1+o(1))√N via A = {1,...,N}.
+
   **Still OPEN in the literature:**
   - Exact asymptotics: Is ℓ(N) ~ √N? (i.e., does ℓ(N)/√N → 1?)
-  
-  **Note on the constant**: We prove c = 1/2, weaker than best-known values.
-  This suffices to establish ℓ(N) = Ω(√N), i.e., the correct order of growth.
 
-  ## Status: ✅ COMPLETE (modulo 1 axiom)
-  
-  ✅ PROVEN:
+  ## Status: ✅ COMPLETE (fully proven, no custom axioms)
+
+  ✅ PROVEN (axiom-free):
     - `singleton_isSidon`: Singleton sets are Sidon
     - `exists_maximal_sidon`: Maximal Sidon subsets exist (finite maximality)
     - `maximal_sidon_nonempty`: Maximal Sidon subsets are nonempty
-    - `sqrt_bound_from_quadratic`: From N ≤ 3k², derive k ≥ (1/2)√N
     - `collision_involves_x`: Any collision in insert x S involves x
-    - `blocked_element_form`: Blocked elements have specific algebraic form
-    - `bound_from_two_to_one`: Double-counting gives |A \ S| ≤ 2|S|² from 2-to-1 map
-    - `kss_blocked_count_bound`: **Fully derived** from axiom (complete proof!)
-    - `maximal_sidon_blocking_bound`: |A| ≤ |S| + 2|S|²
-    - `kss_sqrt_bound`: **Main theorem** - ∃ Sidon B ⊆ A with |B| ≥ (1/2)√|A|
-    
-  ⚠️ AXIOM (1 only):
-    - `kss_two_to_one_map_exists`: Existence of 2-to-1 charging map
-      This corresponds to the "three implies Type 2" argument from KSS Lemma 2.
-  
-  ## Verified Axiom Dependencies
-  
-  Running `#print axioms KSSProven.kss_sqrt_bound` produces:
-  ```
-  'KSSProven.kss_sqrt_bound' depends on axioms: [propext,
-   Classical.choice,
-   KSSProven.kss_two_to_one_map_exists,
-   Quot.sound]
-  ```
-  The first three (propext, Classical.choice, Quot.sound) are standard Lean axioms.
-  The only mathematical axiom is `kss_two_to_one_map_exists`.
+    - `blocked_element_form`: Blocked elements have specific algebraic form (16 cases)
+    - `blockedType2_card_le`: |Type 2 blocked| ≤ |S|² (injection into sumset)
+    - `type1Only_card_le_cube`: |Type 1 only blocked| ≤ |S|³ (subset of S³ image)
+    - `blocking_bound_cubic`: |A \ S| ≤ |S|² + |S|³ (main blocking bound)
+    - `axiom_free_cube_bound`: |A| ≤ 3|S|³ (cube root bound)
+    - `erdos_cube_root_bound`: ∃ Sidon B ⊆ A with |A| ≤ 3|B|³ (main theorem)
 
   ## References
   - Komlós, Sulyok, Szemerédi. "Linear problems in combinatorial number theory." 
@@ -441,7 +428,7 @@ Total: |S + S| · |S| triples, but many give the same x or x ∉ A.
 FINAL APPROACH: We use a weaker but sufficient bound. Each blocked element 
 (Type 1 or Type 2) satisfies x = a + b - c for some a,b,c ∈ S (where c might 
 equal a or b, or where a = b for Type 2). The set of such x has cardinality 
-at most |S|³. But this is too weak! We use the KSS 2-to-1 counting argument instead.
+at most |S|³. This gives the axiom-free bound |A\S| ≤ |S|² + |S|³ (see Part 5).
 -/
 
 -- Note: The exact formula (sumset S).card = |S|(|S|+1)/2 for Sidon sets is not needed
@@ -452,162 +439,144 @@ at most |S|³. But this is too weak! We use the KSS 2-to-1 counting argument ins
 lemma sidon_sumset_card_le_sq (S : Finset ℕ) (_hS : S.IsSidon) :
     (sumset S).card ≤ S.card ^ 2 := sumset_card_le_sq S
 
-/-! ### 4.3 The KSS Charging Argument
+/-! ## Part 5: The Main Results — Blocking Bound and Cube Root Bound
 
-The key combinatorial claim from KSS (1975) is that there exists a "charging map"
-from blocked elements to pairs in S with fiber size ≤ 2.
+The fully proven blocking bound: |A \ S| ≤ |S|² + |S|³, giving ℓ(N) ≥ Ω(N^{1/3}).
 
-**Note**: Our `kss_two_to_one_map_exists` corresponds to a specialization of 
-KSS Lemma 2, adapted to our formalization conventions (ℕ vs ℤ, ordered 
-pairs, etc.). The core combinatorial insight is the same.
+This uses only proven lemmas (blocked_element_form, blockedType2_card_le,
+type1_in_potential, potentialBlocked_card_le). No custom axioms.
 -/
 
-/-- A set admits a 2-to-1 map if there exists a function to pairs with small fibers.
-    
-    We only require the fiber bound on the image of f, not all of S ×ˢ S.
-    This is the minimal axiom needed for the counting argument. -/
-def AdmitsTwoToOneMap (A S : Finset ℕ) : Prop :=
-  ∃ (f : ℕ → ℕ × ℕ), 
-    (∀ x ∈ A \ S, f x ∈ S ×ˢ S) ∧
-    (∀ p ∈ (A \ S).image f, ((A \ S).filter fun x => f x = p).card ≤ 2)
+/-- The "Type 2" predicate: x is blocked via 2x = a + b for some a,b ∈ S. -/
+def isType2 (S : Finset ℕ) (x : ℕ) : Prop :=
+  ∃ a ∈ S, ∃ b ∈ S, 2 * x = a + b
 
-/-- **KSS 2-to-1 Axiom**: For maximal Sidon S in A, there exists a charging map
-    from A \ S to S × S with each fiber of size ≤ 2.
+instance (S : Finset ℕ) (x : ℕ) : Decidable (isType2 S x) := by
+  unfold isType2; exact inferInstance
 
-This corresponds to the "three implies Type 2" argument from KSS (1975) Lemma 2.
+/-- Type 1 only elements: blocked elements that are NOT Type 2. -/
+def type1Only (A S : Finset ℕ) : Finset ℕ :=
+  (A \ S).filter (fun x => ¬ isType2 S x)
 
-*Informal construction*: For each x ∈ A \ S:
-- By maximality, x is blocked: ∃ a,b,c ∈ S with x + c = a + b or 2x = a + b
-- Map x to the lex-smallest such pair (a,b)
+/-- The partition of A \ S into Type 2 and Type 1 only. -/
+lemma card_blocked_partition (A S : Finset ℕ) :
+    (A \ S).card = (blockedType2 A S).card + (type1Only A S).card := by
+  unfold blockedType2 type1Only isType2
+  have := @Finset.card_filter_add_card_filter_not ℕ (A \ S)
+    (fun x => ∃ a ∈ S, ∃ b ∈ S, 2 * x = a + b) _ _
+  omega
 
-*Property*: This map is at most 2-to-1. If three elements x,y,z map to (a,b),
-cross-sum analysis using the Sidon property shows one must be Type 2 via a
-different pair, contradiction.
+/-- Type 1 only elements are in potentialBlocked when S is maximal Sidon. 
 
-We axiomatize this existence claim. -/
-axiom kss_two_to_one_map_exists (A S : Finset ℕ) (hMax : S.IsMaximalSidon A) :
-    AdmitsTwoToOneMap A S
-
-/-! ### 4.4 The Main Blocking Bound -/
-
-/-- From a 2-to-1 map existence, derive the cardinality bound. ✅ PROVEN
-    
-    Proof strategy (portable, uses only standard Finset lemmas):
-    1. |A \ S| = Σ_{p ∈ image} |fiber(p)|  (partition into fibers)
-    2. Each fiber has ≤ 2 elements         (axiom hypothesis)
-    3. So |A \ S| ≤ 2 * |image|
-    4. image ⊆ S ×ˢ S, so |image| ≤ |S|²
-    5. Therefore |A \ S| ≤ 2|S|²
+    Proof: x ∈ type1Only means x is blocked but NOT Type 2.
+    By blocked_element_form, x must be Type 1.
+    By type1_in_potential, x ∈ potentialBlocked S.
 -/
-lemma bound_from_two_to_one (A S : Finset ℕ) (h : AdmitsTwoToOneMap A S) :
-    (A \ S).card ≤ 2 * S.card ^ 2 := by
-  obtain ⟨f, hf_range, hf_fiber⟩ := h
-  let T := A \ S
-  let I := T.image f
-  -- Step 1: |T| = Σ_{p ∈ I} |fiber(p)|  
-  have hfib : T.card = ∑ p ∈ I, (T.filter fun x => f x = p).card := by
-    exact Finset.card_eq_sum_card_fiberwise (fun x hx => Finset.mem_image.mpr ⟨x, hx, rfl⟩)
-  -- Step 2-3: |T| ≤ 2 * |I|
-  have hT_le_2I : T.card ≤ 2 * I.card := by
-    rw [hfib]
-    calc ∑ p ∈ I, (T.filter fun x => f x = p).card 
-        ≤ ∑ p ∈ I, 2 := Finset.sum_le_sum (fun p hp => hf_fiber p hp)
-      _ = I.card * 2 := by rw [Finset.sum_const]; simp [smul_eq_mul]
-      _ = 2 * I.card := by ring
-  -- Step 4: |I| ≤ |S ×ˢ S| = |S|²
-  have hI_le_SS : I.card ≤ S.card ^ 2 := by
-    have hI_sub : I ⊆ S ×ˢ S := fun p hp => by
-      rw [Finset.mem_image] at hp
-      obtain ⟨x, hx, rfl⟩ := hp
-      exact hf_range x hx
-    calc I.card ≤ (S ×ˢ S).card := Finset.card_le_card hI_sub
-      _ = S.card * S.card := Finset.card_product S S
-      _ = S.card ^ 2 := (sq S.card).symm
-  -- Step 5: Combine
-  calc T.card ≤ 2 * I.card := hT_le_2I
-    _ ≤ 2 * S.card ^ 2 := by linarith
+lemma type1Only_subset_potentialBlocked (A S : Finset ℕ) (hMax : S.IsMaximalSidon A) :
+    type1Only A S ⊆ potentialBlocked S := by
+  intro x hx
+  simp only [type1Only, Finset.mem_filter, Finset.mem_sdiff] at hx
+  obtain ⟨⟨hxA, hxS⟩, hxNotType2⟩ := hx
+  -- x is blocked: it's Type 1 or Type 2 by blocked_element_form
+  have hBlocked := blocked_element_form A S hMax x hxA hxS
+  cases hBlocked with
+  | inl hType1 =>
+    -- x is Type 1: ∃ a b c ∈ S with x + c = a + b
+    -- By type1_in_potential, x ∈ potentialBlocked S
+    exact type1_in_potential A S x (Finset.mem_sdiff.mpr ⟨hxA, hxS⟩) hType1
+  | inr hType2 =>
+    -- x is Type 2: ∃ a b ∈ S with x + x = a + b
+    -- But x ∉ blockedType2, so this is impossible
+    exfalso
+    obtain ⟨a, b, ha, hb, heq⟩ := hType2
+    apply hxNotType2
+    unfold isType2
+    exact ⟨a, ha, b, hb, by omega⟩
 
-/-- **KSS Blocking Bound**: For maximal Sidon S ⊆ A, |A \ S| ≤ 2|S|². 
+/-- Type 1 only elements are bounded by |S|³. -/
+lemma type1Only_card_le_cube (A S : Finset ℕ) (hMax : S.IsMaximalSidon A) :
+    (type1Only A S).card ≤ S.card ^ 3 := by
+  calc (type1Only A S).card
+      ≤ (potentialBlocked S).card := Finset.card_le_card (type1Only_subset_potentialBlocked A S hMax)
+    _ ≤ S.card ^ 3 := potentialBlocked_card_le S
+
+/-- **Axiom-Free Blocking Bound**: |A \ S| ≤ |S|² + |S|³.
     
-    Derived from kss_two_to_one_map_exists via double-counting. ✅ PROVEN
+    This uses NO custom axioms — only standard Lean foundations.
+    Combined with |Type 2| ≤ |S|² and |Type 1 only| ≤ |S|³.
 -/
-lemma kss_blocked_count_bound (A S : Finset ℕ) (hMax : S.IsMaximalSidon A) :
-    ((A \ S).card : ℝ) ≤ 2 * S.card ^ 2 := by
-  have h := bound_from_two_to_one A S (kss_two_to_one_map_exists A S hMax)
-  have hcast : ((A \ S).card : ℝ) ≤ ((2 * S.card ^ 2 : ℕ) : ℝ) := Nat.cast_le.mpr h
-  simp only [Nat.cast_mul, Nat.cast_ofNat, Nat.cast_pow] at hcast
-  exact hcast
+theorem blocking_bound_cubic (A S : Finset ℕ) (hMax : S.IsMaximalSidon A) :
+    (A \ S).card ≤ S.card ^ 2 + S.card ^ 3 := by
+  rw [card_blocked_partition A S]
+  have h1 : (blockedType2 A S).card ≤ S.card ^ 2 := blockedType2_card_le A S
+  have h2 : (type1Only A S).card ≤ S.card ^ 3 := type1Only_card_le_cube A S hMax
+  omega
 
-/-- Blocking bound: if S is maximal Sidon in A, then |A| ≤ |S| + 2|S|². ✅ PROVEN -/
-lemma maximal_sidon_blocking_bound (A S : Finset ℕ) 
-    (hMax : S.IsMaximalSidon A) :
-    (A.card : ℝ) ≤ S.card + 2 * S.card ^ 2 := by
-  -- Use the KSS axiom for the blocked count bound
+/-- **Axiom-Free Cube Root Bound**: |S| ≥ (|A|/3)^{1/3}.
+
+    From |A| ≤ |S| + |S|² + |S|³ ≤ 3|S|³,  
+    we get |S|³ ≥ |A|/3, hence |S| ≥ ∛(|A|/3).
+    
+    In Nat form: 3 * |S|³ ≥ |A|.
+-/
+theorem axiom_free_cube_bound (A S : Finset ℕ) (hMax : S.IsMaximalSidon A)
+    (hSge1 : S.card ≥ 1) :
+    A.card ≤ 3 * S.card ^ 3 := by
   have h1 : A.card = S.card + (A \ S).card := by
     have := Finset.card_sdiff_add_card_eq_card hMax.1
     omega
-  rw [h1]
-  push_cast
-  have h2 : ((A \ S).card : ℝ) ≤ 2 * S.card ^ 2 := kss_blocked_count_bound A S hMax
-  linarith
+  have h2 : (A \ S).card ≤ S.card ^ 2 + S.card ^ 3 := blocking_bound_cubic A S hMax
+  -- Need: |S| + |S|² + |S|³ ≤ 3|S|³ for |S| ≥ 1
+  have h3 : S.card ≤ S.card ^ 3 := by nlinarith [hSge1]
+  have h4 : S.card ^ 2 ≤ S.card ^ 3 := by nlinarith [hSge1]
+  omega
 
-/-!
-### Historical Note: The Detailed Counting Argument
+/-- **Erdős Cube Root Bound**: For any finite A ⊆ ℕ with |A| ≥ 1,
+    there exists a Sidon B ⊆ A with |A| ≤ 3|B|³.
 
-The full potential-function argument from KSS (1975) Lemma 2 is technically involved.
-The key idea is that each blocked element x can be "charged" to the witnessing collision,
-and careful analysis shows the total charge is bounded by O(|S|²).
-
-For this formalization, we axiomatize this as `kss_blocked_count_bound` above.
+    This is the main result: ℓ(N) ≥ Ω(N^{1/3}).
 -/
-
-/-! ## Part 5: The Main Theorem -/
-
-/--
-## The KSS Theorem (1975)
-
-For any finite set A ⊆ ℕ, there exists a Sidon subset B ⊆ A 
-with |B| ≥ (1/2)√|A|.
-
-This is the key lower bound for **Erdős Problem 530: ℓ(N) = Θ(√N)**.
--/
-theorem kss_sqrt_bound (A : Finset ℕ) (hA : A.card ≥ 1) :
-    ∃ B : Finset ℕ, B ⊆ A ∧ B.IsSidon ∧ (B.card : ℝ) ≥ (1/2) * Real.sqrt A.card := by
+theorem erdos_cube_root_bound (A : Finset ℕ) (hA : A.card ≥ 1) :
+    ∃ B : Finset ℕ, B ⊆ A ∧ B.IsSidon ∧ A.card ≤ 3 * B.card ^ 3 := by
   have hAne : A.Nonempty := Finset.card_pos.mp (by omega)
   obtain ⟨S, hMax⟩ := exists_maximal_sidon A hAne
-  use S
-  constructor
-  · exact hMax.1
-  constructor  
-  · exact hMax.2.1
-  · have hBound := maximal_sidon_blocking_bound A S hMax
-    have hSne : S.Nonempty := maximal_sidon_nonempty A S hAne hMax
-    have hSge1 : (S.card : ℝ) ≥ 1 := by
-      have : S.card ≥ 1 := Finset.card_pos.mpr hSne
-      exact Nat.one_le_cast.mpr this
-    have h3k2 : (A.card : ℝ) ≤ 3 * S.card ^ 2 := by
-      calc (A.card : ℝ) ≤ S.card + 2 * S.card ^ 2 := hBound
-        _ ≤ S.card ^ 2 + 2 * S.card ^ 2 := by nlinarith [sq_nonneg (S.card : ℝ)]
-        _ = 3 * S.card ^ 2 := by ring
-    exact sqrt_bound_from_quadratic A.card S.card hSge1 h3k2
+  have hSne : S.Nonempty := maximal_sidon_nonempty A S hAne hMax
+  have hSge1 : S.card ≥ 1 := Finset.card_pos.mpr hSne
+  exact ⟨S, hMax.1, hMax.2.1, axiom_free_cube_bound A S hMax hSge1⟩
 
 end KSSProven
+
 /-! ## Axiom Verification
 
-The following command shows exactly which axioms the main theorem depends on.
-This makes the "one axiom" claim mechanically checkable.
+The following commands show exactly which axioms each theorem depends on.
 -/
 
-#print axioms KSSProven.kss_sqrt_bound
+#print axioms KSSProven.blocking_bound_cubic
+#print axioms KSSProven.axiom_free_cube_bound
+#print axioms KSSProven.erdos_cube_root_bound
 
 /-!
 ## Verified Output (February 2026)
 
-Running with `lake env lean KSS_Proven.lean` produces:
+### blocking_bound_cubic (Main blocking bound — AXIOM-FREE)
 ```
-'KSSProven.kss_sqrt_bound' depends on axioms: [propext,
+'KSSProven.blocking_bound_cubic' depends on axioms: [propext,
  Classical.choice,
- KSSProven.kss_two_to_one_map_exists,
+ Quot.sound]
+```
+No custom axioms! This is a fully verified result.
+
+### axiom_free_cube_bound (Cube root bound — AXIOM-FREE)
+```
+'KSSProven.axiom_free_cube_bound' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+```
+
+### erdos_cube_root_bound (Main theorem — AXIOM-FREE)
+```
+'KSSProven.erdos_cube_root_bound' depends on axioms: [propext,
+ Classical.choice,
  Quot.sound]
 ```
 
@@ -615,67 +584,25 @@ Running with `lake env lean KSS_Proven.lean` produces:
 - `propext` — Propositional extensionality (standard Lean)
 - `Classical.choice` — Classical choice (standard Lean)
 - `Quot.sound` — Quotient soundness (standard Lean)
-- `KSSProven.kss_two_to_one_map_exists` — **Our one mathematical axiom**
 
-### The Axiom Statement (Minimal Form)
+All three are standard Lean foundational axioms. **No custom mathematical axioms.**
 
-```
-axiom kss_two_to_one_map_exists (A S : Finset ℕ) (hMax : S.IsMaximalSidon A) :
-    ∃ (f : ℕ → ℕ × ℕ), 
-      (∀ x ∈ A \ S, f x ∈ S ×ˢ S) ∧
-      (∀ p ∈ (A \ S).image f, ((A \ S).filter fun x => f x = p).card ≤ 2)
-```
+### Result Summary
 
-Note: we only require the fiber bound on `(A \ S).image f`, not all of `S ×ˢ S`.
-This is the minimal axiom needed and makes eventual proof easier.
-
-### Concrete Plan to Remove the Axiom
-
-**What we already have:**
-- `blocked_element_form`: For each x ∈ A \ S, either:
-  - Type 1: ∃ a,b,c ∈ S with x + c = a + b, or
-  - Type 2: ∃ a,b ∈ S with 2x = a + b
-- The 16-case exhaustive split is already proven.
-
-**What remains (the KSS combinatorial core):**
-
-1. **Define canonical witness selector:**
-   ```lean
-   def canonicalPair (S : Finset ℕ) (x : ℕ) : ℕ × ℕ :=
-     -- Collect all pairs (a,b) ∈ S × S witnessing x's blocking
-     -- Return lex-smallest
-   ```
-
-2. **Prove f maps into S ×ˢ S:**  
-   Follows from blocked_element_form.
-
-3. **Prove fiber bound ≤ 2 (the hard part):**
-   Assume three distinct x₁, x₂, x₃ map to the same (a,b).
-   From their canonical witnesses, derive equations:
-   - xᵢ + cᵢ = a + b (Type 1) or 2xᵢ = a + b (Type 2)
-   
-   **Key insight:** At most one can be Type 2 for a given (a,b).
-   If two are Type 1 with same (a,b), their c's differ.
-   Cross-summing the equations and using S Sidon gives contradiction.
-
-4. **The "three implies Type 2" argument:**
-   If x₁ + c₁ = a + b and x₂ + c₂ = a + b with c₁ ≠ c₂, then:
-   - x₁ + c₁ = x₂ + c₂
-   - Since S is Sidon and c₁, c₂ ∈ S, this constrains x₁, x₂
-   - A third x₃ cannot coexist without forcing one to be Type 2
-   
-   This is intricate algebra best done in ℤ via casts.
-
-**Estimated effort:** 200-400 lines of Lean, mostly case analysis.
-The mathematics is classical; the formalization is tedious.
+| Theorem | Bound | Axiom-Free? | Status |
+|---------|-------|-------------|--------|
+| `blocking_bound_cubic` | |A\S| ≤ |S|² + |S|³ | ✅ Yes | Fully proven |
+| `axiom_free_cube_bound` | |A| ≤ 3|S|³ | ✅ Yes | Fully proven |
+| `erdos_cube_root_bound` | ∃ Sidon B ⊆ A, |A| ≤ 3|B|³ | ✅ Yes | Fully proven |
 
 ### What This File Proves
 
-✅ **Proven (modulo 1 axiom):** ∀ finite A, ∃ Sidon B ⊆ A with |B| ≥ (1/2)√|A|
+✅ **Fully proven (axiom-free):** |A\S| ≤ |S|² + |S|³ ⟹ ℓ(N) ≥ Ω(N^{1/3})
 
-This establishes: **ℓ(N) ≥ (1/2)√N** (lower bound direction of Erdős #530)
+This establishes a lower bound direction of **Erdős Problem 530**.
 
-❌ **Not proven here:** ℓ(N) ≤ (1+o(1))√N (upper bound, needs separate formalization)
-
-❓ **Still open:** ℓ(N) ~ √N (exact asymptotics, unknown in literature)
+The stronger bound ℓ(N) ≥ Ω(√N) from KSS (1975) requires the 2-to-1
+charging argument, which was shown computationally to be FALSE under
+universal quantification over all finite A ⊆ ℕ (counterexample:
+spread-out Sidon sets S with |A\S| growing as Θ(|S|³) > 2|S|²).
 -/
