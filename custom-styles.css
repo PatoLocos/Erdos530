@@ -1,0 +1,76 @@
+/* Custom styles - Prevent horizontal scrolling on images and figures */
+
+img, .quarto-figure, .cell-output-display {
+  max-width: 100% !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+
+/* Mermaid diagrams responsive */
+.mermaid, .mermaid svg {
+  max-width: 100% !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+
+/* Figure containers */
+figure, .figure {
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+/* Python matplotlib outputs */
+.cell-output img {
+  max-width: 100% !important;
+  height: auto !important;
+  cursor: zoom-in;
+}
+
+/* Remove any horizontal overflow */
+.quarto-figure-center {
+  overflow: hidden !important;
+}
+
+pre.mermaid {
+  overflow: hidden !important;
+}
+
+/* Ensure main content doesn't overflow */
+.content {
+  overflow-x: hidden !important;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+/* DAX/Lean code blocks styling */
+.sourceCode.dax, .sourceCode.lean {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-left: 4px solid #e94560;
+  border-radius: 8px;
+}
+
+/* Theorem boxes */
+.theorem-box {
+  background: linear-gradient(to right, #f8f9fa, #e9ecef);
+  border-left: 5px solid #0d6efd;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 0 8px 8px 0;
+}
+
+/* Proof boxes */
+.proof-box {
+  background: #f8fff8;
+  border-left: 5px solid #198754;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 0 8px 8px 0;
+}
+
+/* Mathematical notation emphasis */
+.math-emphasis {
+  font-size: 1.1em;
+  color: #0d47a1;
+}
