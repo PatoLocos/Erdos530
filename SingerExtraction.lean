@@ -5,10 +5,11 @@ import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Nat.Prime.Basic
 
 /-!
-# Singer Extraction: The √N Sidon Bound
+# Singer Extraction: A Conditional Interval Model
 
-This file formalizes the KSS (1975) lower bound ℓ(N) ≥ c√N using
-Singer's theorem as the key algebraic ingredient.
+This file explores an axiomatized Singer-partition extraction for dense initial
+segments of the natural numbers. It is **not** a formalization of the official
+Erdős 530 lower bound, which concerns arbitrary N-element finite subsets of R.
 
 ## Architecture
 
@@ -28,11 +29,13 @@ The proof has two pillars, both axiomatized:
 - `singer_partition`: Axiom — Singer's partition exists
 - `modular_projection_sidon`: Axiom — mod-q projection preserves Sidon
 - `singer_pigeonhole`: Theorem — pigeonhole on Singer partition extracts Ω(√q) Sidon
-- `sqrt_lower_bound`: Theorem — ℓ(N) ≥ c√N for c > 0
+- `dense_interval_sqrt_bound`: Theorem — a conditional square-root extraction
+  for sets contained in `{0, ..., N-1}`
 
-## The KSS Strategy (Simplified)
+## The Conditional Singer Strategy
 
-Given A ⊆ [1,..,N] with |A| = N:
+Given A ⊆ {0, ..., N-1} with |A| = N (therefore essentially the whole initial
+segment):
 1. Choose prime p with p²+p+1 > 2N (exists by Bertrand-like bounds)
 2. Reduce A mod (p²+p+1) — injective since p²+p+1 > 2N > max pairwise diff
 3. By Singer's theorem, ℤ/(p²+p+1)ℤ = S₁ ∪ ... ∪ S_{p+1}, each Sᵢ Sidon
@@ -40,19 +43,20 @@ Given A ⊆ [1,..,N] with |A| = N:
 5. The preimage of this intersection is Sidon in A (modular Sidon lifts)
 6. Since p ≈ √(2N), we get ≥ N/(√(2N)+1) ≈ √N/√2 Sidon elements
 
-## Axiom Budget
+## Axiom Budget and Scope
 
 This file uses two axioms beyond Lean's core:
 - `singer_partition` (algebraic — would need finite field theory)
 - `modular_projection_sidon` (number-theoretic — needs sum-distinctness mod q)
 
-Both are standard textbook results. Formalizing them fully would require
-significant Mathlib extensions (projective planes, finite field extensions).
+Some are standard textbook results, but the pipeline in this file is still a
+conditional interval model. It does not prove the KSS theorem for arbitrary
+finite sets.
 
 ## References
 
 - Singer, J. (1938). "A theorem in finite projective geometry..."
-- Kolountzakis, Sahasrabudhe, Shao (1975/KSS framework)
+- Komlos, Sulyok, Szemeredi (1975), for the actual arbitrary-set lower bound
 -/
 
 /-! ## Part 1: Definitions for modular Sidon sets -/
@@ -240,15 +244,17 @@ axiom lift_card_eq (A : Finset ℕ) (q : ℕ) (hq : q ≥ 1)
 
 /-! ## Part 5: Main Theorem -/
 
-/-- **The √N Lower Bound for Sidon Numbers.**
+/-- **Conditional square-root extraction for a dense initial segment.**
 
 For any N ≥ 2 and any A ⊆ [0, N-1] with |A| = N,
 there exists a Sidon subset of A of size ≥ N / (3√N + 1),
 which is Ω(√N).
 
-This is the formalized version of KSS (1975).
+Because `A.card = N` and every element of `A` is `< N`, this theorem is about
+the dense initial segment case, not arbitrary N-element sets. It depends on the
+axioms listed above.
 -/
-theorem sqrt_sidon_bound (A : Finset ℕ) (N : ℕ) (hN : N ≥ 2)
+theorem dense_interval_sqrt_bound (A : Finset ℕ) (N : ℕ) (hN : N ≥ 2)
     (hA_card : A.card = N)
     (hA_range : ∀ a ∈ A, a < N) :
     ∃ S : Finset ℕ, S ⊆ A ∧ S.IsSidon ∧
@@ -299,15 +305,16 @@ theorem sqrt_sidon_bound (A : Finset ℕ) (N : ℕ) (hN : N ≥ 2)
           · omega
   exact ⟨S, hS_sub, hS_sidon, hS_size⟩
 
-/-- **Corollary: ℓ(N) = Ω(√N).**
+/-- **Dense initial segment corollary.**
 
-For every N ≥ 2, any N-element subset of [0, N-1] contains a Sidon
-subset of size Ω(√N). In particular, ℓ(N) ≥ c√N.
+For every N ≥ 2, any N-element subset of [0, N-1] contains a Sidon subset of
+size Ω(√N). This is not the official `ell(N)` lower bound for arbitrary finite
+subsets of R.
 -/
-theorem ell_ge_c_sqrt (N : ℕ) (hN : N ≥ 2) :
+theorem dense_initial_segment_ge_c_sqrt (N : ℕ) (hN : N ≥ 2) :
     ∀ A : Finset ℕ, A.card = N → (∀ a ∈ A, a < N) →
       ∃ S : Finset ℕ, S ⊆ A ∧ S.IsSidon ∧ S.card ≥ N / (3 * Nat.sqrt N + 1) :=
-  fun A hcard hrange => sqrt_sidon_bound A N hN hcard hrange
+  fun A hcard hrange => dense_interval_sqrt_bound A N hN hcard hrange
 
 end SingerExtraction
 
@@ -328,8 +335,8 @@ end SingerExtraction
 | File | Bound | Axioms | Lines |
 |---|---|---|---|
 | `KSS_Proven.lean` | N^{1/3} | **None** (axiom-free) | 613 |
-| `SingerExtraction.lean` | √N | 5 axioms | ~250 |
-| Framework gap | — | — | Singer is the hard one |
+| `SingerExtraction.lean` | dense interval √N model | 5 axioms | ~250 |
+| Official KSS lower bound | arbitrary finite sets | not formalized here | — |
 
 ### Path to Axiom Removal
 
@@ -343,6 +350,6 @@ end SingerExtraction
    - Difference sets from cosets
    - Partition into translates
 
-Singer's theorem is the single highest-value target. Everything else
-is plumbing that could be proven with 1-2 weeks of Mathlib work.
+Singer's theorem is useful for interval constructions, but it is not by itself
+the missing formal proof of the KSS arbitrary-set lower bound.
 -/

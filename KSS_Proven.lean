@@ -15,9 +15,11 @@
   
   ## What This Proves
 
-  **This file proves a lower bound direction of Erdős Problem 530:**
-  - Lower bound: ℓ(N) ≥ Ω(N^{1/3})
-  - Specifically: every finite A ⊆ ℕ contains a Sidon subset B with |A| ≤ 3|B|³.
+  **This file proves a natural-number partial result toward Erdős Problem 530:**
+  - Partial lower bound: every finite A ⊆ ℕ contains a Sidon subset B with
+    |A| ≤ 3|B|³, i.e. |B| = Ω(|A|^{1/3}).
+  - The official problem is stated for arbitrary finite A ⊆ ℝ and asks about
+    the exact asymptotic behavior of the best guaranteed Sidon subset size.
 
   **Known classically (not formalized here):**
   - KSS (1975) proved ℓ(N) ≥ c√N for an absolute constant c > 0.
@@ -291,30 +293,21 @@ lemma blocked_element_form (A S : Finset ℕ) (hMax : S.IsMaximalSidon A)
     · rw [hdx] at hdS; exact hxS hdS
 
 /-!
-### The KSS Blocking Bound
+### A False Quadratic Blocking Shortcut
 
-The key combinatorial bound from Komlós-Sulyok-Szemerédi (1975), Lemma 2:
+An earlier draft tried to use the following tempting statement:
 
-**If S is a maximal Sidon subset of A, then |A \ S| ≤ 2|S|².**
+**False in this generality:** If S is an arbitrary maximal Sidon subset of A,
+then |A \ S| ≤ 2|S|².
 
-The proof uses a counting/charging argument:
-1. Each blocked x ∈ A \ S satisfies either:
-   - Type 1: x + c = a + b for some a,b,c ∈ S (so x = a + b - c)
-   - Type 2: 2x = a + b for some a,b ∈ S (so x = (a+b)/2)
+The Type 2 part below really does satisfy |Type 2| ≤ |S|², but the analogous
+quadratic bound for Type 1 elements does not follow from this naive blocking
+classification. Spread-out examples can make the Type 1 image have cubic size.
 
-2. For Type 2: The map x ↦ 2x injects into S + S, giving |Type 2| ≤ |S + S| ≤ |S|².
-
-3. For Type 1 only (not Type 2): Each x can be written as x = a + b - c.
-   Fix a canonical (a,b,c) for each x. Charge x to the pair {a,b}.
-   The key insight: each pair {a,b} receives charge from at most |S| elements
-   (one for each choice of c). More carefully: since S is Sidon, the sums a+b
-   are distinct, so the total charge is bounded by O(|S|²).
-
-4. Combined: |A \ S| ≤ |Type 2| + |Type 1 only| ≤ 2|S|².
-
-**Reference:**
-  Komlós, Sulyok, Szemerédi. "Linear problems in combinatorial number theory."
-  Acta Math. Acad. Sci. Hung. 26 (1975), 113-121.
+Thus the verified proof deliberately keeps the weaker Type 1 bound |S|³. The
+classical KSS square-root lower bound is correct, but formalizing it requires
+their actual extraction argument rather than this overstrong maximal-blocking
+shortcut.
 -/
 
 /-- The sumset S + S as a Finset. -/
@@ -444,7 +437,8 @@ lemma sidon_sumset_card_le_sq (S : Finset ℕ) (_hS : S.IsSidon) :
 
 /-! ## Part 5: The Main Results — Blocking Bound and Cube Root Bound
 
-The fully proven blocking bound: |A \ S| ≤ |S|² + |S|³, giving ℓ(N) ≥ Ω(N^{1/3}).
+The fully proven blocking bound: |A \ S| ≤ |S|² + |S|³, giving an
+Ω(N^{1/3}) lower bound for finite natural-number sets.
 
 This uses only proven lemmas (blocked_element_form, blockedType2_card_le,
 type1_in_potential, potentialBlocked_card_le). No custom axioms.
@@ -465,9 +459,8 @@ def type1Only (A S : Finset ℕ) : Finset ℕ :=
 lemma card_blocked_partition (A S : Finset ℕ) :
     (A \ S).card = (blockedType2 A S).card + (type1Only A S).card := by
   unfold blockedType2 type1Only isType2
-  have := @Finset.card_filter_add_card_filter_not ℕ (A \ S)
-    (fun x => ∃ a ∈ S, ∃ b ∈ S, 2 * x = a + b) _ _
-  omega
+  exact (@Finset.card_filter_add_card_filter_not ℕ (A \ S)
+    (fun x => ∃ a ∈ S, ∃ b ∈ S, 2 * x = a + b) _ _).symm
 
 /-- Type 1 only elements are in potentialBlocked when S is maximal Sidon. 
 
@@ -537,7 +530,8 @@ theorem axiom_free_cube_bound (A S : Finset ℕ) (hMax : S.IsMaximalSidon A)
 /-- **Erdős Cube Root Bound**: For any finite A ⊆ ℕ with |A| ≥ 1,
     there exists a Sidon B ⊆ A with |A| ≤ 3|B|³.
 
-    This is the main result: ℓ(N) ≥ Ω(N^{1/3}).
+    This is the main formalized partial result toward Erdős 530: an
+    Ω(N^{1/3}) lower bound for finite natural-number sets.
 -/
 theorem erdos_cube_root_bound (A : Finset ℕ) (hA : A.card ≥ 1) :
     ∃ B : Finset ℕ, B ⊆ A ∧ B.IsSidon ∧ A.card ≤ 3 * B.card ^ 3 := by
@@ -600,9 +594,11 @@ All three are standard Lean foundational axioms. **No custom mathematical axioms
 
 ### What This File Proves
 
-✅ **Fully proven (axiom-free):** |A\S| ≤ |S|² + |S|³ ⟹ ℓ(N) ≥ Ω(N^{1/3})
+✅ **Fully proven (axiom-free):** |A\S| ≤ |S|² + |S|³ for finite A ⊆ ℕ,
+which gives a Sidon subset of size Ω(|A|^{1/3}) in that setting.
 
-This establishes a lower bound direction of **Erdős Problem 530**.
+This is a partial natural-number result toward **Erdős Problem 530**. It is not
+the full official statement, which quantifies over arbitrary finite subsets of ℝ.
 
 The stronger bound ℓ(N) ≥ c√N (KSS 1975) is known classically but is not
 formalized here. An earlier attempt to axiomatize an intermediate "2-to-1 map

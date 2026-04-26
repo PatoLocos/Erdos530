@@ -2,164 +2,96 @@
 Copyright 2026 Norway Analytics
 SPDX-License-Identifier: Apache-2.0
 
-Formalization of Erdős Problem 530: Sidon set bounds ℓ(N).
+Statement layer for Erdos Problem 530.
 -/
 
-import FormalConjectures.Util.ProblemImports
+import Mathlib.Data.Finset.Card
+import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Topology.Basic
+import Mathlib.Order.Filter.AtTopBot.Basic
+import Mathlib.Tactic
 
 /-!
-# Erdős Problem 530: Sidon Sets and ℓ(N) = Θ(√N)
+# Erdos Problem 530: Sidon Subsets
 
-## Problem Statement
+The official problem asks about finite subsets of `R`, not just intervals and
+not just maximal Sidon subsets of `{1, ..., N}`.
 
-For N ∈ ℕ, let ℓ(N) denote the minimum size of a maximal Sidon subset of {1, ..., N}.
-Show that ℓ(N) = Θ(√N).
+For `N : Nat`, let `ell N` be the largest `m` such that every `N`-element
+finite subset of `R` contains a Sidon subset of size at least `m`. The known
+classical result is `ell N = Theta(sqrt N)` by Komlos-Sulyok-Szemeredi and the
+standard interval upper bound. The open part recorded on erdosproblems.com is
+the sharper asymptotic question `ell N ~ sqrt N`.
 
-## Background
-
-A Sidon set (or B₂-sequence) is a set where all pairwise sums are distinct.
-Equivalently, if a + b = c + d for elements of the set, then {a, b} = {c, d}.
-
-The upper bound ℓ(N) ≤ (1 + o(1))√N is trivial: any Sidon subset of {1,...,N}
-has at most ~√2N elements (since sums range to 2N and are distinct).
-
-The lower bound ℓ(N) ≥ (1/2)√N was proven by Komlós, Sulyok, and Szemerédi (1975)
-using a charging argument that shows blocking in maximal Sidon sets is limited.
-
-## References
-
-* <https://www.erdosproblems.com/530>
-* Komlós, Sulyok, Szemerédi. "Linear problems in combinatorial number theory."
-  Acta Math. Acad. Sci. Hung. 26 (1975), 113-121.
-* Ruzsa, I. Z. "Solving a linear equation in a set of integers I."
-  Acta Arith. 65 (1993), 259-282.
+The axiom-free theorem proved in `KSS_Proven.lean` is a weaker natural-number
+partial result: every finite `A : Finset Nat` has a Sidon subset `B` with
+`A.card <= 3 * B.card ^ 3`, i.e. an `Omega(N^(1/3))` lower bound in that
+setting. It should not be confused with either the KSS square-root theorem or
+the open exact-asymptotic problem.
 -/
 
 namespace Erdos530
 
 /-! ## Definitions -/
 
-/--
-A finite set S of natural numbers is Sidon if all pairwise sums are distinct:
-a + b = c + d with a,b,c,d ∈ S implies {a, b} = {c, d} as sets.
--/
-def Finset.IsSidon (S : Finset ℕ) : Prop :=
-  ∀ a b c d : ℕ, a ∈ S → b ∈ S → c ∈ S → d ∈ S →
-    a + b = c + d → ({a, b} : Set ℕ) = {c, d}
+/-- A finite set is Sidon if pairwise sums determine the unordered pair. -/
+def IsSidon {alpha : Type*} [Add alpha] (S : Finset alpha) : Prop :=
+  ∀ a b c d : alpha, a ∈ S → b ∈ S → c ∈ S → d ∈ S →
+    a + b = c + d → ({a, b} : Set alpha) = {c, d}
+
+/-- The empty set is Sidon. -/
+lemma empty_isSidon {alpha : Type*} [Add alpha] :
+    IsSidon (∅ : Finset alpha) := by
+  intro a b c d ha _ _ _ _
+  simp at ha
 
 /--
-A Sidon set S is maximal in A if:
-1. S ⊆ A
-2. S is Sidon
-3. No larger Sidon subset of A contains S
+`GuaranteesSidonSubset N m` means every `N`-element finite subset of `R`
+contains a Sidon subset of cardinality at least `m`.
 -/
-def Finset.IsMaximalSidon (S A : Finset ℕ) : Prop :=
-  S ⊆ A ∧ S.IsSidon ∧ ∀ x ∈ A, x ∉ S → ¬(insert x S).IsSidon
+def GuaranteesSidonSubset (N m : Nat) : Prop :=
+  ∀ A : Finset Real, A.card = N →
+    ∃ S : Finset Real, S ⊆ A ∧ IsSidon S ∧ m ≤ S.card
+
+/-- The guarantee with `m = 0` is always true. -/
+lemma guarantees_zero (N : Nat) : GuaranteesSidonSubset N 0 := by
+  intro A _
+  exact ⟨∅, by simp, empty_isSidon, Nat.zero_le _⟩
 
 /--
-ℓ(N) is the minimum cardinality of a maximal Sidon subset of {1, ..., N}.
+The official `ell(N)`: the largest guaranteed Sidon-subset size among all
+`N`-element finite subsets of `R`.
+
+The maximum is taken over `0, ..., N`; this finite set is nonempty because
+`0` is always guaranteed.
 -/
-noncomputable def ell (N : ℕ) : ℕ :=
-  Finset.Icc 1 N |>.powerset.filter (fun S =>
-    S.IsMaximalSidon (Finset.Icc 1 N)) |>.image (fun S => S.card) |>.min' (by
-      -- The empty set is never maximal (can always add an element if N ≥ 1)
-      -- For N = 0, Icc 1 0 = ∅ and the powerset/filter is tricky
-      -- We show there's always at least one maximal Sidon set
-      sorry)
+noncomputable def ell (N : Nat) : Nat :=
+  by
+  classical
+  exact ((Finset.range (N + 1)).filter (fun m => GuaranteesSidonSubset N m)).max' (by
+    refine ⟨0, ?_⟩
+    rw [Finset.mem_filter, Finset.mem_range]
+    exact ⟨Nat.zero_lt_succ N, guarantees_zero N⟩)
 
-/-! ## The Main Conjecture -/
+/-! ## Problem Statements -/
 
-/--
-**Erdős Problem 530: ℓ(N) = Θ(√N)**
+/-- The known order-of-magnitude form `ell(N) = Theta(sqrt N)`. -/
+def orderOfMagnitudeStatement : Prop :=
+  ∃ c1 c2 : Real, c1 > 0 ∧ c2 > 0 ∧
+    Filter.Eventually (fun N : Nat =>
+      c1 * Real.sqrt (N : Real) ≤ (ell N : Real) ∧
+        (ell N : Real) ≤ c2 * Real.sqrt (N : Real)) Filter.atTop
 
-The exact statement: there exist constants c₁, c₂ > 0 such that for all
-sufficiently large N:
-    c₁ √N ≤ ℓ(N) ≤ c₂ √N
+/-- The open exact-asymptotic form asked on erdosproblems.com. -/
+def exactAsymptoticConjecture : Prop :=
+  Filter.Tendsto
+    (fun N : Nat => (ell N : Real) / Real.sqrt (N : Real))
+    Filter.atTop
+    (nhds (1 : Real))
 
-*Status*: The lower bound ℓ(N) ≥ (1/2)√N was proven by KSS (1975).
-The upper bound ℓ(N) ≤ (1+o(1))√N is trivial. The exact asymptotics
-(whether ℓ(N)/√N converges, and to what value) remain open.
--/
-@[category research open, AMS 5 11]
-theorem erdos530_sidon_bound : ∃ c₁ c₂ : ℝ, c₁ > 0 ∧ c₂ > 0 ∧
-    ∀ᶠ N in Filter.atTop, c₁ * Real.sqrt N ≤ ell N ∧ (ell N : ℝ) ≤ c₂ * Real.sqrt N :=
-  answer(sorry)
-
-/-! ## Partial Results -/
-
-/--
-**KSS Lower Bound (1975)**
-
-For any finite A ⊆ ℕ, there exists a Sidon subset B ⊆ A with |B| ≥ (1/2)√|A|.
-
-This implies ℓ(N) ≥ (1/2)√N (take A = {1,...,N}).
-
-*Note*: The KSS (1975) result ℓ(N) ≥ c√N is correct. However, an earlier
-axiomatization of an intermediate step (a universal 2-to-1 charging map from
-A\S to S×S for arbitrary A) was an overstrong claim that is FALSE in full
-generality. A weaker cube root bound (|A| ≤ 3|B|³) is fully proven axiom-free
-in `KSS_Proven.lean`.
--/
-@[category research solved, AMS 5 11]
-theorem kss_lower_bound (A : Finset ℕ) (hA : A.card ≥ 1) :
-    ∃ B : Finset ℕ, B ⊆ A ∧ B.IsSidon ∧ (B.card : ℝ) ≥ (1/2) * Real.sqrt A.card := by
-  sorry -- Full √N bound requires different technique; cube root bound proven in KSS_Proven.lean
-
-/--
-**Trivial Upper Bound**
-
-Any maximal Sidon subset of {1,...,N} has at most ~(1+o(1))√(2N) elements.
-
-Proof: A Sidon set S has |S|(|S|+1)/2 distinct pairwise sums.
-If S ⊆ {1,...,N}, these sums lie in {2,...,2N}, giving |S|² ≲ 4N.
--/
-@[category research solved, AMS 5 11]
-theorem sidon_upper_bound (N : ℕ) (S : Finset ℕ) (hS : S ⊆ Finset.Icc 1 N) 
-    (hSidon : S.IsSidon) :
-    (S.card : ℝ) ≤ Real.sqrt (2 * N) + 1 := by
-  sorry
-
-/-! ## Proven Partial Result: Cube Root Bound
-
-The following weaker bound IS fully proven (axiom-free) in `KSS_Proven.lean`.
-It uses a direct blocking count argument: each blocked element in A \ S
-corresponds to a collision that can be traced to at most |S|² + |S|³ cases.
--/
-
-/--
-**Cube Root Bound (Proven)**
-
-For any finite A ⊆ ℕ with |A| ≥ 1, there exists a Sidon subset B ⊆ A
-with |A| ≤ 3|B|³.
-
-This gives ℓ(N) ≥ Ω(N^{1/3}), weaker than the conjectured Ω(√N) but
-fully formalized with no custom axioms.
-
-Full proof: `KSS_Proven.lean` → `erdos_cube_root_bound`
--/
-@[category research solved, AMS 5 11]
-theorem cube_root_lower_bound (A : Finset ℕ) (hA : A.card ≥ 1) :
-    ∃ B : Finset ℕ, B ⊆ A ∧ B.IsSidon ∧ A.card ≤ 3 * B.card ^ 3 := by
-  sorry -- Full axiom-free proof in KSS_Proven.lean (erdos_cube_root_bound)
-
-/-!
-## Axiom Status
-
-All results in `KSS_Proven.lean` depend only on standard Lean axioms:
-- `propext` — Propositional extensionality
-- `Classical.choice` — Classical choice
-- `Quot.sound` — Quotient soundness
-
-**No custom axioms.** A previous axiom (`kss_two_to_one_map_exists`) positing
-a universal 2-to-1 charging map from A \ S to S × S was removed after
-computational verification showed it is FALSE in full generality (counterexample:
-spread-out Sidon sets where |A \ S| grows as Θ(|S|³) > 2|S|²).
-
-This does **not** contradict KSS (1975), whose ℓ(N) ≥ c√N result is correct.
-The axiom was an overstrong universal statement that does not faithfully capture
-the actual KSS argument. Formalizing the real √N bound requires encoding the
-true KSS Lemma 2, which likely uses structure beyond a simple cardinality bound
-on |A \ S| for arbitrary A.
--/
+/-- The axiom-free cube-root theorem proved in `KSS_Proven.lean`, as a statement. -/
+def cubeRootLowerBoundOverNatStatement : Prop :=
+  ∀ A : Finset Nat, A.card ≥ 1 →
+    ∃ B : Finset Nat, B ⊆ A ∧ IsSidon B ∧ A.card ≤ 3 * B.card ^ 3
 
 end Erdos530

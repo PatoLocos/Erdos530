@@ -5,8 +5,8 @@ import Mathlib.Data.Finset.Powerset
 /-!
 # Sidon Set Exploration: The N^{1/3} Barrier
 
-This file formalizes WHY the naive blocking argument for Erdős Problem 530
-caps at N^{1/3}, and what would be needed to reach √N.
+This file formalizes why the naive maximal-blocking argument toward Erdős
+Problem 530 caps at N^{1/3}.
 
 ## Main Results
 
@@ -22,10 +22,12 @@ proven (axiom-free) in `KSS_Proven.lean`.
 The naive bound |type1Only| ≤ |S|³ comes from mapping each Type 1 element
 to a triple in S³. This gives f(k) = k³ → N^{1/3}.
 
-KSS (1975) achieves f(k) = O(k) via a Sidon-specific extraction argument,
-giving √N. The gap is entirely in bounding |type1Only|:
+Within this framework, a hypothetical quadratic bound for `type1Only` would
+already give a square-root lower bound. The actual KSS proof reaches the
+square-root order by a different extraction argument, not by proving such a
+bound for every arbitrary maximal Sidon subset.
 - f(k) = k³  ⟹  N^{1/3}  (this file)
-- f(k) = k   ⟹  √N       (KSS, not formalized)
+- f(k) = k²  ⟹  N^{1/2}  (hypothetical within this framework)
 -/
 
 /-! ## Definitions -/
@@ -92,9 +94,8 @@ lemma blockedType2_card_le (A S : Finset ℕ) :
 lemma card_blocked_partition (A S : Finset ℕ) :
     (A \ S).card = (blockedType2 A S).card + (type1Only A S).card := by
   unfold blockedType2 type1Only isType2
-  have := @Finset.card_filter_add_card_filter_not ℕ (A \ S)
-    (fun x => ∃ a ∈ S, ∃ b ∈ S, 2 * x = a + b) _ _
-  omega
+  exact (@Finset.card_filter_add_card_filter_not ℕ (A \ S)
+    (fun x => ∃ a ∈ S, ∃ b ∈ S, 2 * x = a + b) _ _).symm
 
 lemma type1Only_subset_potentialBlocked (A S : Finset ℕ) (hMax : S.IsMaximalSidon A) :
     type1Only A S ⊆ potentialBlocked S := by
@@ -145,10 +146,11 @@ theorem new_sums_per_step (S : Finset ℕ) (x : ℕ) (hx : x ∉ S) :
 
 /-! ## Framework Reduction Theorem -/
 
-/-- **Framework Reduction Theorem**: If |type1Only(A,S)| ≤ f(|S|),
+/-- **Maximal-blocking framework reduction**: If |type1Only(A,S)| ≤ f(|S|),
     then |A| ≤ |S| + |S|² + f(|S|).
 
-    This reduces Problem 530 to bounding |type1Only|.
+    This reduces this particular maximal-blocking strategy to bounding
+    |type1Only|. It is not a reduction of the full Erdős 530 problem.
 -/
 theorem framework_reduction (A S : Finset ℕ) (hMax : S.IsMaximalSidon A)
     (f : ℕ → ℕ) (hf : (type1Only A S).card ≤ f S.card) :
@@ -172,13 +174,14 @@ theorem cube_root_from_framework (A S : Finset ℕ) (hMax : S.IsMaximalSidon A)
 
 /-! ## Discussion: The √N Barrier
 
-The framework shows: **Problem 530 reduces to bounding |type1Only(A,S)|.**
+The framework shows: **this maximal-blocking strategy reduces to bounding
+|type1Only(A,S)|.**
 
 | Bound on |type1Only| | Result | Method |
 |---|---|---|
 | f(k) = k³ | N^{1/3} | Naive: type1Only ⊆ image of S³ |
-| f(k) = k² | N^{1/2} | Would match KSS! |
-| f(k) = k | N^{1/2} | KSS extraction (not via blocking) |
+| f(k) = k² | N^{1/2} | Would give square-root order in this framework |
+| f(k) = k | N^{1/2} | Stronger than needed here |
 
 The naive bound f(k) = k³ arises because each Type 1 element x = a+b-c
 is in the image of (a,b,c) ∈ S³ under the map (a,b,c) ↦ a+b-c,
@@ -191,8 +194,9 @@ values (one per c). Since there are at most |S|²/2 distinct sums
 (Sidon!), we get |type1Only| ≤ |S|² · |S| / something...
 but this doesn't directly improve the bound without double-counting.
 
-KSS (1975) avoids the blocking argument entirely and uses a constructive
-extraction that builds S incrementally, achieving ℓ(N) ≥ c√N.
+KSS (1975) achieves ℓ(N) ≥ c√N by a different extraction argument, not by the
+false universal claim that every arbitrary maximal Sidon subset has only
+O(|S|²) blocked elements.
 -/
 
 end SidonExploration
